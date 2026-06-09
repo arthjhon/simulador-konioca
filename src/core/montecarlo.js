@@ -94,8 +94,9 @@ export function sensibilidade(config, premissas = PREMISSAS) {
 
   return Object.keys(config.vars).map((campo) => {
     const spec = config.vars[campo];
-    const lo = spec.min ?? spec.media - spec.sigma;
-    const hi = spec.max ?? spec.media + spec.sigma;
+    // limites por distribuição (specs carregam min/max residuais mesmo em 'normal')
+    const lo = spec.dist === 'normal' ? spec.media - spec.sigma : spec.min;
+    const hi = spec.dist === 'normal' ? spec.media + spec.sigma : spec.max;
     const vLo = vplCom({ ...central, [campo]: lo });
     const vHi = vplCom({ ...central, [campo]: hi });
     return { campo, baixo: vLo, alto: vHi, amplitude: Math.abs(vHi - vLo) };
