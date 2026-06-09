@@ -8,8 +8,6 @@ export const PREMISSAS = {
   cmvPct: 0.35,        // % do ticket/receita
   royaltiesPct: 0.06,  // % da receita bruta
   publicidadePct: 0.02,
-  rampUpMeses: 3,
-  rampUpFator: 0.90,   // -10% nos meses 1..3
   cac: 180,            // R$ por cliente adquirido
 };
 
@@ -26,6 +24,7 @@ export const CENARIOS = {
     sazonalidade: 0.75,
     investimento: 190000,
     despesasCalibracaoPct: 0.0978,
+    rampInicial: 0.40, rampMeses: 18,
     // referência do relatório (para exibição "ref.")
     ref: { vpl: -42300, tirAnual: 0.041, paybackSimples: null, paybackDescontado: null,
            receitaEstavel: 32400, lucroEstavel: -2700, ltv: 270, burn: 35100 },
@@ -40,6 +39,7 @@ export const CENARIOS = {
     sazonalidade: 1.0,
     investimento: 162500,
     despesasCalibracaoPct: 0.2327,
+    rampInicial: 0.50, rampMeses: 13,
     ref: { vpl: 87600, tirAnual: 0.237, paybackSimples: 38, paybackDescontado: 47,
            receitaEstavel: 60000, lucroEstavel: 6240, ltv: 600, burn: 53760 },
   },
@@ -53,6 +53,7 @@ export const CENARIOS = {
     sazonalidade: 1.2,
     investimento: 135000,
     despesasCalibracaoPct: 0.1811,
+    rampInicial: 0.60, rampMeses: 10,
     ref: { vpl: 198400, tirAnual: 0.412, paybackSimples: 22, paybackDescontado: 28,
            receitaEstavel: 115200, lucroEstavel: 32800, ltv: 1056, burn: 82400 },
   },

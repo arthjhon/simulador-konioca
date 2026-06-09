@@ -39,14 +39,20 @@ export function paybackDescontado(cashflows, rate) {
   return payback(descontados);
 }
 
-// Receita-base mensal (sem sazonalidade flat — ver plano).
+// Receita-base mensal a 100% de penetração (sem sazonalidade flat — ver plano).
 function receitaBase(c) {
   return c.ticket * c.clientesDia * PREMISSAS.diasPorMes;
 }
 
-// Lucro de um mês dado o fator de ramp-up.
-function lucroMes(c, rampFator) {
-  const receita = receitaBase(c) * rampFator;
+// Penetração de mercado no mês m: sobe linear de rampInicial até 1,0 em rampMeses.
+export function penetracao(c, m) {
+  if (m >= c.rampMeses) return 1.0;
+  return c.rampInicial + (1 - c.rampInicial) * (m - 1) / (c.rampMeses - 1);
+}
+
+// Lucro de um mês dada a penetração (0..1). Custos variáveis escalam com a receita; custo fixo não.
+function lucroMes(c, pen) {
+  const receita = receitaBase(c) * pen;
   const cmv = receita * PREMISSAS.cmvPct;
   const royalties = receita * PREMISSAS.royaltiesPct;
   const pub = receita * PREMISSAS.publicidadePct;
@@ -56,12 +62,11 @@ function lucroMes(c, rampFator) {
   return { receita, custos, lucro: receita - custos };
 }
 
-// Fluxo de 0..horizonte. Mês 0 = -investimento. Meses 1..3 com ramp-up.
+// Fluxo de 0..horizonte. Mês 0 = -investimento. Meses 1..N com ramp de penetração.
 export function buildCashFlow(c, premissas = PREMISSAS) {
   const fluxos = [-c.investimento];
   for (let m = 1; m <= premissas.horizonteMeses; m++) {
-    const ramp = m <= premissas.rampUpMeses ? premissas.rampUpFator : 1.0;
-    fluxos.push(lucroMes(c, ramp).lucro);
+    fluxos.push(lucroMes(c, penetracao(c, m)).lucro);
   }
   return fluxos;
 }
