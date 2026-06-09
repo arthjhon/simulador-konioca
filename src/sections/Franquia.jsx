@@ -1,2 +1,6 @@
 // src/sections/Franquia.jsx
-export default function Franquia() { return <div className="card">Franquia (em construção)</div>; }
+import { TEXTO } from '../content/texto.js';
+export default function Franquia() {
+  const t = TEXTO.franquia;
+  return <div className="card"><h2>{t.titulo}</h2>{t.paragrafos.map((p, i) => <p key={i}>{p}</p>)}</div>;
+}
