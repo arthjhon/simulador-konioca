@@ -1,7 +1,7 @@
 // src/components/charts/CompareFluxoChart.jsx
 // Fluxo de caixa acumulado dos 3 cenários sobreposto — comparação lado a lado.
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer } from 'recharts';
-import { CHART } from '../../util/chartTheme.js';
+import { CHART, TOOLTIP } from '../../util/chartTheme.js';
 
 const SERIES = [
   ['pessimista', 'Pessimista', '#ef4444'],
@@ -27,7 +27,7 @@ export default function CompareFluxoChart({ fluxosPorCenario }) {
           <CartesianGrid stroke={CHART.grid} />
           <XAxis dataKey="mes" stroke={CHART.muted} />
           <YAxis stroke={CHART.muted} tickFormatter={(v) => (v / 1000).toFixed(0) + 'k'} />
-          <Tooltip formatter={(v, nome) => [`R$ ${Number(v).toLocaleString('pt-BR')}`, nome]} />
+          <Tooltip {...TOOLTIP} formatter={(v, nome) => [`R$ ${Number(v).toLocaleString('pt-BR')}`, nome]} labelFormatter={(m) => `Mês ${m}`} />
           <Legend />
           <ReferenceLine y={0} stroke={CHART.bad} />
           {SERIES.map(([k, nome, cor]) => (

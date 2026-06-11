@@ -1,6 +1,6 @@
 // src/components/charts/VplHistogram.jsx
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts';
-import { CHART } from '../../util/chartTheme.js';
+import { CHART, TOOLTIP } from '../../util/chartTheme.js';
 
 export default function VplHistogram({ valores, bins = 30 }) {
   if (!valores?.length) return null;
@@ -20,7 +20,7 @@ export default function VplHistogram({ valores, bins = 30 }) {
           <CartesianGrid stroke={CHART.grid} />
           <XAxis dataKey="x" stroke={CHART.muted} tickFormatter={(v) => (v / 1000).toFixed(0) + 'k'} />
           <YAxis stroke={CHART.muted} />
-          <Tooltip formatter={(v) => `${v.toLocaleString('pt-BR')} iterações`} labelFormatter={(v) => `VPL ~ R$ ${Number(v).toLocaleString('pt-BR')}`} />
+          <Tooltip {...TOOLTIP} cursor={{ fill: '#94a6c4', fillOpacity: 0.08 }} formatter={(v) => `${v.toLocaleString('pt-BR')} iterações`} labelFormatter={(v) => `VPL ~ R$ ${Number(v).toLocaleString('pt-BR')}`} />
           <ReferenceLine x={0} stroke={CHART.bad} />
           <Bar dataKey="n" fill={CHART.accent} />
         </BarChart>
