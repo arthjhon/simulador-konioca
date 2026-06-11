@@ -1,25 +1,58 @@
 // src/state/SimContext.jsx
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { CENARIOS } from '../core/scenarios.js';
 import { computeMetrics } from '../core/finance.js';
 
 const SimContext = createContext(null);
+const STORAGE_KEY = 'cemevi.sim.v1';
+
+function carregarSalvo() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (d && typeof d === 'object') return d;
+  } catch { /* storage indisponível ou corrompido — segue com defaults */ }
+  return null;
+}
 
 export function SimProvider({ children }) {
-  const [cenarioAtivo, setCenarioAtivo] = useState('realista');
-  // params editáveis: começam nulos (= usar o cenário). Edições sobrescrevem.
-  const [overrides, setOverrides] = useState({});
+  const salvo = useMemo(carregarSalvo, []);
+  const [cenarioAtivo, setCenarioAtivo] = useState(
+    salvo?.cenarioAtivo in CENARIOS ? salvo.cenarioAtivo : 'realista'
+  );
+  // overrides guardados POR cenário: trocar de cenário não descarta edições.
+  const [overridesPorCenario, setOverridesPorCenario] = useState(salvo?.overridesPorCenario ?? {});
+  const [sazonal, setSazonal] = useState(Boolean(salvo?.sazonal));
 
-  const cenario = useMemo(() => ({ ...CENARIOS[cenarioAtivo], ...overrides }), [cenarioAtivo, overrides]);
-  const metrics = useMemo(() => computeMetrics(cenario), [cenario]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ cenarioAtivo, overridesPorCenario, sazonal }));
+    } catch { /* sem storage */ }
+  }, [cenarioAtivo, overridesPorCenario, sazonal]);
+
+  const overrides = overridesPorCenario[cenarioAtivo] ?? {};
+  const cenario = useMemo(
+    () => ({ ...CENARIOS[cenarioAtivo], ...overrides }),
+    [cenarioAtivo, overrides]
+  );
+  const metrics = useMemo(() => computeMetrics(cenario, undefined, { sazonal }), [cenario, sazonal]);
 
   function setParam(campo, valor) {
-    setOverrides((o) => ({ ...o, [campo]: valor }));
+    setOverridesPorCenario((o) => ({
+      ...o,
+      [cenarioAtivo]: { ...(o[cenarioAtivo] ?? {}), [campo]: valor },
+    }));
   }
-  function resetParams() { setOverrides({}); }
-  function trocarCenario(key) { setCenarioAtivo(key); setOverrides({}); }
+  // Limpa as edições do cenário ativo (e o que estava salvo dele).
+  function resetParams() {
+    setOverridesPorCenario((o) => {
+      const novo = { ...o };
+      delete novo[cenarioAtivo];
+      return novo;
+    });
+  }
+  function trocarCenario(key) { setCenarioAtivo(key); }
 
-  const value = { cenarioAtivo, cenario, metrics, setParam, resetParams, trocarCenario };
+  const value = { cenarioAtivo, cenario, metrics, setParam, resetParams, trocarCenario, sazonal, setSazonal };
   return <SimContext.Provider value={value}>{children}</SimContext.Provider>;
 }
 

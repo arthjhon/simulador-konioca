@@ -1,16 +1,18 @@
 // src/App.jsx
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { SimProvider } from './state/SimContext.jsx';
 import KpiBar from './components/KpiBar.jsx';
 import Nav from './components/Nav.jsx';
 import Mercado from './sections/Mercado.jsx';
 import Franquia from './sections/Franquia.jsx';
-import Cenarios from './sections/Cenarios.jsx';
-import Simulador from './sections/Simulador.jsx';
-import MonteCarlo from './sections/MonteCarlo.jsx';
 import Fomento from './sections/Fomento.jsx';
 import Veredito from './sections/Veredito.jsx';
 import './App.css';
+
+// Seções com gráficos (Recharts) carregam sob demanda — tira a lib do bundle inicial.
+const Cenarios = lazy(() => import('./sections/Cenarios.jsx'));
+const Simulador = lazy(() => import('./sections/Simulador.jsx'));
+const MonteCarlo = lazy(() => import('./sections/MonteCarlo.jsx'));
 
 const MAP = { mercado: Mercado, franquia: Franquia, cenarios: Cenarios, simulador: Simulador, montecarlo: MonteCarlo, fomento: Fomento, veredito: Veredito };
 
@@ -35,7 +37,11 @@ export default function App() {
         <KpiBar />
         <Nav atual={secao} onChange={(k) => { window.location.hash = k; }} />
       </header>
-      <main className="conteudo"><Secao /></main>
+      <main className="conteudo">
+        <Suspense fallback={<div className="card" aria-busy="true">Carregando seção…</div>}>
+          <Secao />
+        </Suspense>
+      </main>
     </SimProvider>
   );
 }

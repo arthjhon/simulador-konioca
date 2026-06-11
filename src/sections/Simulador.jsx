@@ -1,8 +1,10 @@
 // src/sections/Simulador.jsx
+import { useRef } from 'react';
 import { useSim } from '../state/SimContext.jsx';
 import CashFlowChart from '../components/charts/CashFlowChart.jsx';
 import Metric from '../components/Metric.jsx';
 import { fmtBRL, fmtPct, fmtMeses, fmtMult } from '../util/format.js';
+import { exportarPng } from '../util/exportar.js';
 
 // tipo 'pct': exibido em 0–100% (slider + número), armazenado como fração 0–1 no modelo.
 const CAMPOS = [
@@ -34,7 +36,9 @@ function CampoPct({ id, valor, onChange }) {
 }
 
 export default function Simulador() {
-  const { cenario, metrics, setParam, resetParams, cenarioAtivo } = useSim();
+  const { cenario, metrics, setParam, resetParams, cenarioAtivo, sazonal, setSazonal } = useSim();
+  const refFluxo = useRef(null);
+  const ampSaz = Math.round(Math.abs(1 - (cenario.sazonalidade ?? 1)) * 100);
   return (
     <div className="grid2">
       <div className="card">
@@ -68,8 +72,16 @@ export default function Simulador() {
           <Metric label="LTV/CAC" valor={fmtMult(metrics.ltvCac)} />
           <Metric label="Lucro mensal" valor={fmtBRL(metrics.lucroEstavel)} />
         </div>
-        <h3 style={{ marginTop: 16 }}>Fluxo de caixa acumulado (60 meses)</h3>
-        <CashFlowChart fluxos={metrics.fluxos} />
+        <label className="toggle">
+          <input type="checkbox" checked={sazonal} onChange={(e) => setSazonal(e.target.checked)} />
+          Sazonalidade mensal — alta dez–mar / baixa abr–jul, amplitude ±{ampSaz}%
+          {ampSaz === 0 && ' (neutra neste cenário)'}
+        </label>
+        <div className="chart-header">
+          <h3>Fluxo de caixa acumulado (60 meses)</h3>
+          <button className="btn-mini" onClick={() => exportarPng(refFluxo.current, 'fluxo-caixa.png')}>PNG</button>
+        </div>
+        <div ref={refFluxo}><CashFlowChart fluxos={metrics.fluxos} /></div>
       </div>
     </div>
   );

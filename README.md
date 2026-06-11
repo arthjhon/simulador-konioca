@@ -35,4 +35,12 @@ penetração de mercado gradual** por cenário; os vereditos (pessimista inviáv
 otimista altamente rentável) são preservados, e o realista — único reconciliável — reproduz
 aproximadamente o payback do relatório.
 
-> Melhoria futura: rodar o Monte Carlo em Web Worker para N muito grande (atualmente N≈5.000 roda instantâneo no thread principal).
+## Recursos extras
+
+- **Monte Carlo em Web Worker** — N até 200.000 sem travar a UI, com IC 95% para P(VPL>0).
+- **Sazonalidade mensal opcional** — curva alta dez–mar / baixa abr–jul (média anual = 1,0), amplitude por cenário.
+- **Comparação de cenários** — fluxo de caixa acumulado dos 3 cenários sobreposto.
+- **Export** — CSV (tabela de cenários e iterações do MC) e PNG dos gráficos.
+- **Persistência local** — parâmetros editados e config do MC sobrevivem ao reload (localStorage).
+- **Acessibilidade** — tabela de dados alternativa sob cada gráfico, `aria-live` nos KPIs, navegação com ícones e numeração.
+- **Performance** — seções com gráficos em lazy-load (bundle inicial ~207 kB).

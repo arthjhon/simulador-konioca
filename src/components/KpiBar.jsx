@@ -15,7 +15,7 @@ export default function KpiBar() {
   const { metrics, cenario } = useSim();
   const { estado, rotulo } = classificar(metrics);
   return (
-    <div className={`kpibar ${estado}`}>
+    <div className={`kpibar ${estado}`} aria-live="polite">
       <span className="kpibar-cenario">{cenario.nome}</span>
       <Metric label="VPL (60m)" valor={fmtBRL(metrics.vpl)} />
       <Metric label="TIR a.a." valor={fmtPct(metrics.tirAnual)} />

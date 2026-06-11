@@ -50,6 +50,15 @@ export function penetracao(c, m) {
   return c.rampInicial + (1 - c.rampInicial) * (m - 1) / (c.rampMeses - 1);
 }
 
+// Curva de sazonalidade mensal (Maceió, jan..dez): alta dez–mar, baixa abr–jul, neutra ago–nov.
+// O shape soma zero no ano ⇒ média anual do fator = 1,0 (muda o timing do caixa, não a receita média).
+// Amplitude por cenário = |1 − sazonalidade| (pessimista ±25%, realista 0, otimista ±20%).
+const SHAPE_SAZONAL = [1, 1, 1, -1, -1, -1, -1, 0, 0, 0, 0, 1];
+export function sazonalidadeFator(c, m) {
+  const amp = Math.abs(1 - (c.sazonalidade ?? 1));
+  return 1 + amp * SHAPE_SAZONAL[(m - 1) % 12];
+}
+
 // Lucro de um mês dada a penetração (0..1). Custos variáveis escalam com a receita; custo fixo não.
 function lucroMes(c, pen) {
   const receita = receitaBase(c) * pen;
@@ -63,10 +72,12 @@ function lucroMes(c, pen) {
 }
 
 // Fluxo de 0..horizonte. Mês 0 = -investimento. Meses 1..N com ramp de penetração.
-export function buildCashFlow(c, premissas = PREMISSAS) {
+// opts.sazonal: aplica a curva mensal de sazonalidade sobre a receita (default off).
+export function buildCashFlow(c, premissas = PREMISSAS, opts = {}) {
   const fluxos = [-c.investimento];
   for (let m = 1; m <= premissas.horizonteMeses; m++) {
-    fluxos.push(lucroMes(c, penetracao(c, m)).lucro);
+    const fator = penetracao(c, m) * (opts.sazonal ? sazonalidadeFator(c, m) : 1);
+    fluxos.push(lucroMes(c, fator).lucro);
   }
   return fluxos;
 }
@@ -79,9 +90,9 @@ export function ltv(c) {
   return c.ticket * margem * visitasAno * vidaPeriodos;
 }
 
-export function computeMetrics(c, premissas = PREMISSAS) {
+export function computeMetrics(c, premissas = PREMISSAS, opts = {}) {
   const i = monthlyRate(premissas.tmaAnual);
-  const fluxos = buildCashFlow(c, premissas);
+  const fluxos = buildCashFlow(c, premissas, opts);
   const estavel = lucroMes(c, 1.0);
   const tirMensal = irr(fluxos);
   return {
