@@ -55,7 +55,8 @@ export function penetracao(c, m) {
 // Amplitude por cenário = |1 − sazonalidade| (pessimista ±25%, realista 0, otimista ±20%).
 const SHAPE_SAZONAL = [1, 1, 1, -1, -1, -1, -1, 0, 0, 0, 0, 1];
 export function sazonalidadeFator(c, m) {
-  const amp = Math.abs(1 - (c.sazonalidade ?? 1));
+  // amplitude editável (c.ampSazonal); default derivado do fator do cenário
+  const amp = c.ampSazonal ?? Math.abs(1 - (c.sazonalidade ?? 1));
   return 1 + amp * SHAPE_SAZONAL[(m - 1) % 12];
 }
 
@@ -63,7 +64,7 @@ export function sazonalidadeFator(c, m) {
 function lucroMes(c, pen) {
   const receita = receitaBase(c) * pen;
   const cmv = receita * PREMISSAS.cmvPct;
-  const royalties = receita * PREMISSAS.royaltiesPct;
+  const royalties = receita * (c.royaltiesPct ?? PREMISSAS.royaltiesPct); // ajustável por cenário
   const pub = receita * PREMISSAS.publicidadePct;
   const calib = receita * c.despesasCalibracaoPct;
   const fixo = c.custoFixoMensal;
@@ -84,7 +85,7 @@ export function buildCashFlow(c, premissas = PREMISSAS, opts = {}) {
 
 // LTV: ticket × margem × visitas/ano × vida(anos). Calibrável; default coerente com o relatório.
 export function ltv(c) {
-  const margem = 1 - PREMISSAS.cmvPct - PREMISSAS.royaltiesPct - PREMISSAS.publicidadePct; // 0,57
+  const margem = 1 - PREMISSAS.cmvPct - (c.royaltiesPct ?? PREMISSAS.royaltiesPct) - PREMISSAS.publicidadePct; // 0,57 default
   const vidaPeriodos = 1 / (1 - c.taxaRetorno); // retenção -> vida média
   const visitasAno = 12;
   return c.ticket * margem * visitasAno * vidaPeriodos;
