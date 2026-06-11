@@ -1,5 +1,6 @@
 // src/components/charts/CashFlowChart.jsx
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts';
+import { CHART } from '../../util/chartTheme.js';
 
 export default function CashFlowChart({ fluxos }) {
   let acc = 0;
@@ -7,11 +8,11 @@ export default function CashFlowChart({ fluxos }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={data}>
-        <CartesianGrid stroke="#2a3550" />
-        <XAxis dataKey="mes" stroke="#9fb0cc" /><YAxis stroke="#9fb0cc" />
+        <CartesianGrid stroke={CHART.grid} />
+        <XAxis dataKey="mes" stroke={CHART.muted} /><YAxis stroke={CHART.muted} />
         <Tooltip formatter={(v) => `R$ ${v.toLocaleString('pt-BR')}`} />
-        <ReferenceLine y={0} stroke="#dc2626" />
-        <Line type="monotone" dataKey="acumulado" stroke="#2563eb" dot={false} strokeWidth={2} />
+        <ReferenceLine y={0} stroke={CHART.bad} />
+        <Line type="monotone" dataKey="acumulado" stroke={CHART.accent} dot={false} strokeWidth={2} />
       </LineChart>
     </ResponsiveContainer>
   );

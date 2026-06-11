@@ -13,6 +13,17 @@ const DEFAULT_VARS = {
   custoFixoMensal: { label: 'Custo fixo', dist: 'triangular', min: 12000, moda: 14000, max: 18000, media: 14000, sigma: 2000 },
 };
 const DISTS = ['triangular', 'normal', 'uniforme'];
+const N_MIN = 100, N_MAX = 50000;
+
+function validarVar(spec) {
+  if (spec.dist === 'triangular' && !(spec.min <= spec.moda && spec.moda <= spec.max))
+    return 'Triangular exige mín ≤ moda ≤ máx — corrija os valores.';
+  if (spec.dist === 'uniforme' && !(spec.min < spec.max))
+    return 'Uniforme exige mín < máx — corrija os valores.';
+  if (spec.dist === 'normal' && !(spec.sigma > 0))
+    return 'Normal exige desvio σ > 0.';
+  return null;
+}
 
 export default function MonteCarlo() {
   const { cenarioAtivo } = useSim();
@@ -20,23 +31,51 @@ export default function MonteCarlo() {
   const [seed, setSeed] = useState(123);
   const [vars, setVars] = useState(DEFAULT_VARS);
   const [resultado, setResultado] = useState(null);
+  const [erros, setErros] = useState({});
+  const [rodando, setRodando] = useState(false);
 
   function setVar(campo, patch) { setVars((v) => ({ ...v, [campo]: { ...v[campo], ...patch } })); }
+
   function rodar() {
-    const cfg = { base: cenarioAtivo, n: Number(n), seed: Number(seed), vars };
-    setResultado(runSimulation(cfg));
+    const novosErros = {};
+    for (const [campo, spec] of Object.entries(vars)) {
+      const e = validarVar(spec);
+      if (e) novosErros[campo] = e;
+    }
+    setErros(novosErros);
+    if (Object.keys(novosErros).length) return;
+
+    const nVal = Math.min(N_MAX, Math.max(N_MIN, Math.round(Number(n) || 0)));
+    setN(nVal);
+    const cfg = { base: cenarioAtivo, n: nVal, seed: Number(seed) || 1, vars };
+    setRodando(true);
+    // setTimeout deixa o React pintar o estado "Simulando…" antes do cálculo síncrono
+    setTimeout(() => {
+      setResultado(runSimulation(cfg));
+      setRodando(false);
+    }, 30);
   }
+
+  const labels = Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, v.label]));
 
   return (
     <div>
       <div className="card">
         <h2>Monte Carlo — base: {cenarioAtivo}</h2>
         <div className="grid2">
-          <div><label>Iterações (N)</label><input type="number" value={n} onChange={(e) => setN(e.target.value)} /></div>
-          <div><label>Semente</label><input type="number" value={seed} onChange={(e) => setSeed(e.target.value)} /></div>
+          <div>
+            <label htmlFor="mc-n">Iterações (N)</label>
+            <input id="mc-n" type="number" min={N_MIN} max={N_MAX} value={n} onChange={(e) => setN(e.target.value)} />
+            <div className="campo-hint">Entre {N_MIN} e {N_MAX.toLocaleString('pt-BR')} — ajustado automaticamente</div>
+          </div>
+          <div>
+            <label htmlFor="mc-seed">Semente</label>
+            <input id="mc-seed" type="number" value={seed} onChange={(e) => setSeed(e.target.value)} />
+            <div className="campo-hint">Mesma semente ⇒ mesmo resultado (reprodutível)</div>
+          </div>
         </div>
         {Object.entries(vars).map(([campo, spec]) => (
-          <div key={campo} style={{ borderTop: '1px solid #2a3550', paddingTop: 8, marginTop: 8 }}>
+          <div key={campo} style={{ borderTop: '1px solid var(--line)', paddingTop: 8, marginTop: 8 }}>
             <strong>{spec.label}</strong>
             <label>Distribuição</label>
             <select value={spec.dist} onChange={(e) => setVar(campo, { dist: e.target.value })}>
@@ -61,9 +100,12 @@ export default function MonteCarlo() {
                 <div><label>máx</label><input type="number" value={spec.max} onChange={(e) => setVar(campo, { max: Number(e.target.value) })} /></div>
               </div>
             )}
+            {erros[campo] && <div className="campo-erro" role="alert">{erros[campo]}</div>}
           </div>
         ))}
-        <button className="acao" style={{ marginTop: 12 }} onClick={rodar}>Rodar simulação</button>
+        <button className="acao" style={{ marginTop: 12 }} onClick={rodar} disabled={rodando}>
+          {rodando ? 'Simulando…' : 'Rodar simulação'}
+        </button>
       </div>
 
       {resultado && (
@@ -77,8 +119,8 @@ export default function MonteCarlo() {
               <Metric label="VPL médio" valor={fmtBRL(resultado.vpl.media)} />
             </div>
           </div>
-          <div className="card"><h3>Distribuição do VPL ({resultado.n} iterações)</h3><VplHistogram valores={resultado.vpl.valores} /></div>
-          <div className="card"><h3>Sensibilidade (tornado) — amplitude do VPL</h3><TornadoChart sensibilidade={resultado.sensibilidade} /></div>
+          <div className="card"><h3>Distribuição do VPL ({resultado.n.toLocaleString('pt-BR')} iterações)</h3><VplHistogram valores={resultado.vpl.valores} /></div>
+          <div className="card"><h3>Sensibilidade (tornado) — amplitude do VPL</h3><TornadoChart sensibilidade={resultado.sensibilidade} labels={labels} /></div>
         </>
       )}
     </div>
