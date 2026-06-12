@@ -22,18 +22,31 @@ npm run build      # build de produção
 - `src/sections/` — Mercado, Franquia, Cenários, Simulador, Monte Carlo, Fomento, Veredito
 - `src/components/` — KPI bar, navegação, gráficos (Recharts)
 - `src/state/SimContext.jsx` — cenário ativo + parâmetros editáveis
-- `Docs/` — spec de design, plano de implementação e relatório original
 
 ## Notas de modelagem
 
 O motor é a **fonte de verdade**: VPL/TIR/payback são saída honesta do fluxo de caixa, não valores
 forçados. Os números do relatório aparecem como referência ("ref.") na tabela de cenários.
 
-⚠️ **Importante:** os VPL/TIR do relatório original são internamente inconsistentes com a própria
-operação (ver `Docs/2026-06-09-simulador-cemevi-design.md`, §3.6). O modelo usa um **ramp de
-penetração de mercado gradual** por cenário; os vereditos (pessimista inviável, realista viável,
-otimista altamente rentável) são preservados, e o realista — único reconciliável — reproduz
-aproximadamente o payback do relatório.
+⚠️ **Importante:** os VPL/TIR do relatório original eram internamente inconsistentes com a própria
+operação. O modelo usa um **ramp de penetração de mercado gradual** por cenário; os vereditos
+(pessimista inviável, realista viável, otimista altamente rentável) são preservados, e o realista —
+único reconciliável — reproduz aproximadamente o payback do relatório.
+
+## Hospedagem e failover
+
+| Papel | Endereço | Infra |
+|---|---|---|
+| **Produção** | https://simulador.arthlabs.dev | VM própria (NGINX) atrás de Cloudflare Tunnel |
+| **Espelho** | https://arthjhon.github.io/simulador-konioca/ | GitHub Pages, publicado por Actions a cada push (roda os testes antes do deploy) |
+
+**Failover automático:** um Cloudflare Worker na rota `simulador.arthlabs.dev/*` tenta a VM
+(timeout de 5 s); em erro ou status ≥ 500, serve a mesma rota a partir do espelho no GitHub Pages —
+transparente para o usuário, sem intervenção manual (testado derrubando o NGINX da origem).
+O header `x-served-by` indica quem respondeu: `vm-srv-trnx-01` ou `backup-gh-pages`.
+
+O mesmo build funciona em todos os endereços: `base: './'` no Vite (assets relativos) + navegação
+por hash, sem necessidade de rewrites no servidor.
 
 ## Recursos extras
 
